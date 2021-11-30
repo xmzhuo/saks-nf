@@ -1,0 +1,34 @@
+{
+    "title": "example saks-nf pipeline pipeline parameters",
+    "description": "Proof of concept of a saks pipeline implemented with Nextflow",
+    "type": "workflow",
+    "profile": "standard",
+    "workdir": "./saks-work",
+    "reportdir": "./saks-report",
+    "process": {
+        "bed2interval" : {
+            "name" : "bed2interval",
+            "input" : "./sak_data/*.{bed,dict}",
+            "upstream" : [""],
+            "script" : "./sak_data/test.sh",
+            "dockerimg" : "broadinstitute/gatk:4.2.2.0",
+            "argument" : "bash !{script} test.bed human_g1k_v37_decoy.dict",
+            "outputDir" : "./results/bed2interval",
+            "sakcpu" : "2",
+            "sakmem" : "4.GB",
+            "saktime" : "1.hour"
+        },
+        "addchr" : {
+            "name" : "addchr",
+            "input" : "",
+            "upstream" : ["bed2interval"],
+            "script" : "",
+            "dockerimg" : "",
+            "argument" : "file=$(ls *.interval_list); cat $file | sed 's/^/chr/' > ${file%.*}.chr.interval_list",
+            "outputDir" : "./results/addchr",
+            "sakcpu" : "2",
+            "sakmem" : "4.GB",
+            "saktime" : "1.hour"
+        }
+    }
+}
