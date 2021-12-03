@@ -1,5 +1,6 @@
 # A json api for building and running nextflow workflow automaticlly
-Workflow for building pipeline from json input without writing code from scratch. Once run completely, saks-nf will generate a complete and ready-to-go nextflow workflow, user can choose to rerun it with 'nextflow run' instead.
+Workflow for building pipeline from scratch with json input. SAKS for Swiss Army Knife Solution. \n
+Once run completely, saks-nf will generate a complete and ready-to-go nextflow workflow, user can choose to rerun it with 'nextflow run' instead.
 User can build single process or multiple processes workflow with a simple json file (example1.json for single process, example.json for multiple process) 
 It is compatible with docker or local executer and run on various platform, such as local pc, hpc(slurm) or cloud with default config files in nextflow format (see example in ./config). 
 User can configure the requirement of the process,such as cpu, mem and timeout policy in the json file.
