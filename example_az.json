@@ -1,0 +1,49 @@
+{
+    "title": "example saks-nf pipeline pipeline parameters",
+    "description": "Proof of concept of a saks pipeline implemented with Nextflow",
+    "type": "workflow",
+    "profile": "azure",
+    "workdir": "az://test/saks-work",
+    "reportdir": "./saks-report",
+    "process": {
+        "bed2interval" : {
+            "name" : "bed2interval",
+            "input" : {
+                "bed" : "./sak_data/*.bed",
+                "dict" : "./sak_data/*.dict"
+            },
+            "output" : {
+                "file" : "*.interval_list",
+                "log" : "*.log"
+            },
+            "upstream" : [""],
+            "script" : "./sak_data/test.sh",
+            "dockerimg" : "broadinstitute/gatk:4.2.2.0",
+            "argument" : "bash !{script} test.bed human_g1k_v37_decoy.dict",
+            "outputDir" : "az://test/saks-results/bed2interval",
+            "sakcpu" : "4",
+            "sakmem" : "4.GB",
+            "saktime" : "1.hour",
+            "queue" : "d4v3"
+        },
+        "addchr" : {
+            "name" : "addchr",
+            "input" : {
+                "file" : ""
+            },
+            "output" : {
+                "file" : "*.interval_list",
+                "log" : "*.log"
+            },
+            "upstream" : ["bed2interval.file"],
+            "script" : "",
+            "dockerimg" : "xmzhuo/umi:2021",
+            "argument" : "file=$(ls *.interval_list); cat $file | sed 's/^/chr/' > ${file%.*}.chr.interval_list",
+            "outputDir" : "az://test/saks-results/addchr",
+            "sakcpu" : "2",
+            "sakmem" : "4.GB",
+            "saktime" : "1.hour",
+            "queue" : "d2v3"
+        }
+    }
+}

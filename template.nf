@@ -94,10 +94,10 @@ workflow {
     
     /*
     *//* ## step cmd example SAK
-    *if(params.input) {Var_InFiles = Channel.fromPath(params.input).toSortedList()} else {Var_InFiles = Channel.fromPath(params.defdir + "/data/input_sanitychk")}
-    *Var_UpStream = Channel.fromPath(params.defdir + "/data/upstream_sanitychk").concat_upstream
+    *if(params.input) {Var_InFiles = Channel.fromPath(params.input).toSortedList()} else {Var_InFiles = Channel.fromPath("$baseDir" + "/data/input_sanitychk")}
+    *Var_UpStream = Channel.fromPath("$baseDir" + "/data/upstream_sanitychk").concat_upstream
     *Var_UpStream.view()
-    *if(params.script) {Var_ScriptFiles = Channel.fromPath(params.script).toSortedList()} else {Var_ScriptFiles = Channel.fromPath(params.defdir + "/bin/script_sanitychk")}
+    *if(params.script) {Var_ScriptFiles = Channel.fromPath(params.script).toSortedList()} else {Var_ScriptFiles = Channel.fromPath("$baseDir" + "/bin/script_sanitychk")}
     *
     *if (params.dockerimg) {
     *    SAKDOC(Var_InFiles, Var_UpStream, Var_ScriptFiles, params.argument, params.dockerimg, params.sakcpu, params.sakmem, params.saktime, params.outputDir)
