@@ -100,7 +100,7 @@ input example files (json, bed, dict) locate in ./sak_data
 }
 ```
 
-### example_az.json is a demo for composing and above workflow on cloud environment. with minor change you can use it for aws et al.
+### example_az.json is a demo for composing and running above workflow on cloud environment. with minor change you can use it for aws et al.
 ```json
 {
 "title": "example saks-nf pipeline pipeline parameters",
