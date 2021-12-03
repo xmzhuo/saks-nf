@@ -93,18 +93,6 @@ DIRECTORY=`dirname $0`
 cp $DIRECTORY/template.nf $DIRECTORY/main.nf
 
 
-#step1 input from json file
-#name = 'step1'
-#input = "$baseDir/data/input_sanitychk"
-#script = "$baseDir/bin/script_sanitychk"
-#dockerimg = ""
-#argument = ""
-#outputDir = 'results'
-#sakcpu = "2"
-#sakmem = "4.GB"
-#saktime = "1.hour"
-
-
 #inputjson='./example.json'
 inputjson=$File
 
@@ -187,12 +175,7 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
         fi
         echo $upstep >> upitem.txt
     done 
-    #upitem=$(echo $(cat $inputjson | jq .process | jq .${step}.upstream[] -r) | sed 's/ /, /g') 
-    ##chk container status
-    #upimg=$(cat $inputjson | jq .process | jq .${step}.dockerimg -r)
-    ##upitem=$(echo ${upitem^^} | sed 's/.OUT/.out/') 
-     
-    #if [ $(echo $upimg | wc -c) -gt 1 ]; then upitem=${upitem^^}.out; else upitem=${upitem^^}DOC.out; fi
+   
     upitem=$(cat upitem.txt | sed 1d | sed 's/ /, /g')
     if [ $(echo $upitem | wc -c) -gt 5 ]; then upitem=".concat(${upitem})|collect"; else upitem=""; fi
     
@@ -207,10 +190,6 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     | sed "s/SAK/${step^^}/g" | sed "s/params./params.${step}_/g" | sed "s/Var_/${step^^}_/g" \
     | sed "s/.concat_upstream/$upitem/" | sed "s/${step^^}_InFiles/$itemfile/g" >> new_steps.txt
 
-    #cat $DIRECTORY/template.nf | grep "* ## step cmd example" -A10 | sed 's/\*//' \
-    #| sed "s/SAK/${step^^}/g" | sed "s/params./params.${step}_/g" | sed "s/params.${step}_defdir/params.defdir/g" | sed "s/Var_/${step^^}_/g" \
-    #| sed "s/.concat_upstream/$upitem/" >> new_steps.txt
-
 done 
 # add new params after "// compose params"
 sed -i '/\/\/ compose params/r new_params.txt' $DIRECTORY/main.nf
@@ -224,6 +203,7 @@ sed -i '/\/\/ import modules/r new_module.txt' $DIRECTORY/main.nf
 # include process after "// compose workflow"
 sed -i '/\/\/ compose workflow/r new_steps.txt' $DIRECTORY/main.nf
 
+rm new_params.txt new_loginfo.txt new_module.txt new_steps.txt
 #get directory for work and report
 workdir=$(cat $inputjson | jq .workdir -r)
 reportdir=$(cat $inputjson | jq .reportdir -r)
@@ -231,7 +211,10 @@ reportdir=$(cat $inputjson | jq .reportdir -r)
 if [ $Mode == 'run' ]; then
     #run nextflow
     nextflow run $DIRECTORY -profile ${profile} -w ${workdir} --outputDir ${reportdir}
-    timestamp=$(date '+%Y%m%d_%H%M')
-    mv ${reportdir}/timeline.html ${reportdir}/$(basename ${inputjson%.json}).${timestamp}.timeline.html
-    mv ${reportdir}/report.html ${reportdir}/$(basename ${inputjson%.json}).${timestamp}.report.html
+    #chk if report is local or not
+    if [ $(echo $reportdir | grep "://" | wc -l) -eq 0 ]; then
+        timestamp=$(date '+%Y%m%d_%H%M')
+        mv ${reportdir}/timeline.html ${reportdir}/$(basename ${inputjson%.json}).${timestamp}.timeline.html
+        mv ${reportdir}/report.html ${reportdir}/$(basename ${inputjson%.json}).${timestamp}.report.html
+    fi
 fi
