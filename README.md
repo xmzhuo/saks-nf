@@ -30,61 +30,65 @@ The most convenient way is to install `saks-nf` is to git clone the xmzhuo/saks-
 * saks-nf: Workflows for for building 
 
 ```bash
-bash saks-nf/run.sh saks-nf/example1.json
+bash ./saks-nf/run.sh ./sak-nf/sak_data/example_io.json
 ```
 
-### example1.json is a demo for composing and run one process workflow. It uses gatk docker image to convert bed file to interval_list. This example show the basic element of the json schema of saks-nf. 
+```
+Syntax: run.sh [-f|h|r|V|v]
+    options:
+    -f|--file         Json file as input.
+    -h|--help         Print this Help.
+    -r|--run          Running mode. run, otherwise compose
+    -V|--version      Print software version and exit.
+    -v|--verbose      Verbose.
+```
+* without -r, it only compose the workflow (recommend pratice when run it for the first time to do sanity check), you can manually run the pipeline with 'nextflow run /path/to/saks-nf' after passing your check with the workflow.
+* with -r the nextflow will run right after the pipeline composed
+
+input example files (json, bed, dict) locate in ./sak_data
+
+### example_io.json is a demo for composing and run two process workflow. The first process uses gatk docker image to convert bed file to interval_list. The second process add chr to chromosome in interval_list. This example show the basic element of the json schema of saks-nf. 
+
 ```json
+{
 "title": "example saks-nf pipeline one process",                                    # Title of workflow
 "description": "Proof of concept of a saks pipeline implemented with Nextflow",     # Description of workflow
 "type": "workflow",                                                                 # Type 
-"profile": "standard",                                                              # profile of choice, standard (default on local machine), slurm (for hpc), azure, aws etc
-"workdir": "./work",                                                                # designate a work directory to store temporary files
+"profile": "standard",                                                              # profile of choice (need to match the name in config file), standard (default on local machine), slurm (for hpc), azure, aws etc
+"workdir": "./saks-work",                                                           # designate a work directory to store temporary files
 "reportdir": "./saks-report",                                                       # designate a report directory to store timeline.html and report.html 
 "process": {                                                                        
     "bed2interval" : {                                                              # process
         "name" : "bed2interval",                                                    # name of process, need to match the process name (recommend to use lowercase)
-        "input" : "./sak_data/*.{bed,dict}",                                        # input files (ideally put all input files in one folder, allow wild card and some basic regex) 
+        "input" : {                                                                 # input files (allow wild card and some basic regex)
+                "bed" : "./sak_data/*.bed",                                         # location of input files
+                "dict" : "./sak_data/*.dict"
+            }, 
+        "output" : {                                                                # Output files (allow wild card and some basic regex)
+            "file" : "*.interval_list",
+            "log" : "*.log"
+        },
         "upstream" : [""],                                                          # Upstream files, array format ["a","b"]. If not upstream file available such as the first process leave it as [""].
         "script" : "./sak_data/test.sh",                                            # Customized script for runing, any script as long as your evironment support it    
         "dockerimg" : "broadinstitute/gatk:4.2.2.0",                                # Docker image of choice, other wise leave it "".
-        "argument" : "bash !{script} test.bed human_g1k_v37_decoy.dict",            # Allow some brief bash cmd (short and simple one line). As nextflow convention, variable for process params use !; other use $. 
+        "argument" : "bash !{script} test.bed human_g1k_v37_decoy.dict",            # Allow some brief bash cmd (short and simple one line). As nextflow convention, variable for process params use !; others use $. 
         "outputDir" : "./results/bed2interval",                                     # Outpur Directory for this particular process, can be different for each process.
         "sakcpu" : "2",                                                             # Assign cpu cores for this process
         "sakmem" : "4.GB",                                                          # Assign memory for this process
         "saktime" : "1.hour"                                                        # Set timeout policy
-    }
-}
-
-```
-
-### example.json is a demo for composing and run two process workflow. Base on example1.json, it add one process to add chr to chromosome in interval_list.
-```json
-"title": "example saks-nf pipeline pipeline parameters",
-"description": "Proof of concept of a saks pipeline implemented with Nextflow",
-"type": "workflow",
-"profile": "standard",
-"workdir": "./saks-work",
-"reportdir": "./saks-report",
-"process": {
-    "bed2interval" : {
-        "name" : "bed2interval",
-        "input" : "./sak_data/*.{bed,dict}",
-        "upstream" : [""],
-        "script" : "./sak_data/test.sh",
-        "dockerimg" : "broadinstitute/gatk:4.2.2.0",
-        "argument" : "bash !{script} test.bed human_g1k_v37_decoy.dict",
-        "outputDir" : "./results/bed2interval",
-        "sakcpu" : "2",
-        "sakmem" : "4.GB",
-        "saktime" : "1.hour"
     },
-    "addchr" : {                                
-        "name" : "addchr",                                                            # second process name
-        "input" : "",                                                                 # not external input for this process  
-        "upstream" : ["bed2interval"],                                                # take the output of upstream process   
-        "script" : "",                                                                # no script provide since this is a simple step  
-        "dockerimg" : "",                                                             # no docker image is need (as long as your environment supper the one line cmd in the argument)
+    "addchr" : {
+        "name" : "addchr",                                                          # name of second process, need to match the process name (recommend to use lowercase)
+        "input" : {
+            "file" : ""                                                             # if not additional input 
+        },
+        "output" : {
+            "file" : "*.interval_list",
+            "log" : "*.log"
+        },
+        "upstream" : ["bed2interval.file"],                                         # assign specif output from upstream process
+        "script" : "",                                                              # if not script is needed
+        "dockerimg" : "",                                                           # use local environment rather than docker
         "argument" : "file=$(ls *.interval_list); cat $file | sed 's/^/chr/' > ${file%.*}.chr.interval_list",
         "outputDir" : "./results/addchr",
         "sakcpu" : "2",
@@ -92,9 +96,68 @@ bash saks-nf/run.sh saks-nf/example1.json
         "saktime" : "1.hour"
     }
 }
+}
 ```
 
+### example_az.json is a demo for composing and above workflow on cloud environment. with minor change you can use it for aws et al.
+```json
+{
+"title": "example saks-nf pipeline pipeline parameters",
+"description": "Proof of concept of a saks pipeline implemented with Nextflow running on Azure cloud",
+"type": "workflow",
+"profile": "azure",                                                                 # set the profile as azure, you can change it to aws 
+"workdir": "az://test/saks-work",                                                   # set the workdir on the cloud, if use aws, change to s3 accordingly
+"reportdir": "./saks-report",                                                       # you can save the report on local or cloud location (may thraw a minor error message beacuse unable to change name etc, won't affect the normal running)
+"process": {
+    "bed2interval" : {
+        "name" : "bed2interval",
+        "input" : {
+            "bed" : "./sak_data/*.bed",                                             # you can change it to a cloud location
+            "dict" : "./sak_data/*.dict"
+        },
+        "output" : {
+            "file" : "*.interval_list",
+            "log" : "*.log"
+        },
+        "upstream" : [""],
+        "script" : "./sak_data/test.sh",
+        "dockerimg" : "broadinstitute/gatk:4.2.2.0",
+        "argument" : "bash !{script} test.bed human_g1k_v37_decoy.dict",
+        "outputDir" : "az://test/saks-results/bed2interval",                        # cloud location for ouput files 
+        "sakcpu" : "4",
+        "sakmem" : "4.GB",
+        "saktime" : "1.hour",
+        "queue" : "d4v3"                                                            # set queue of interest (you can change machine type for each queue in ./config/azure.cofig)
+    },
+    "addchr" : {
+        "name" : "addchr",
+        "input" : {
+            "file" : ""
+        },
+        "output" : {
+            "file" : "*.interval_list",
+            "log" : "*.log"
+        },
+        "upstream" : ["bed2interval.file"],
+        "script" : "",
+        "dockerimg" : "xmzhuo/umi:2021",                                            # recommend to use a container in cloud environment, here just a small ubuntu image as example.
+        "argument" : "file=$(ls *.interval_list); cat $file | sed 's/^/chr/' > ${file%.*}.chr.interval_list",
+        "outputDir" : "az://test/saks-results/addchr",
+        "sakcpu" : "2",
+        "sakmem" : "4.GB",
+        "saktime" : "1.hour",
+        "queue" : "d2v3"
+    }
+}
+}
+```
+
+For running on cloud, please fill in the user name and credential in the config files accordingly or modify it to meet your need.
+For Azure, you can configure the queue machine type directly on the azure.configure
+For AWS, you can configure the queue machine type and policy on aws website. [Example from antunderwood](https://antunderwood.gitlab.io/bioinformant-blog/posts/running_nextflow_on_aws_batch/)
+
 ### result of 'bash saks-nf/run.sh saks-nf/example1.json'
+
 1. Compose nextflow pipeline
 Create a main.nf from template.nf; Create multiple sub-worflow porcess in ./module
 2. Run nextflow and generate result
@@ -102,6 +165,8 @@ A interval_list file and a timestamped log file in ./results/bed2interval for pr
 A modified interval_list file and a timestamped log file in ./results/addchr for process 1
 Timestamped timeline.html and report.html in ./saks-report 
 Multiple tempoary files and docker/singularity image in work directory.
+
+* For reference, All of the example Store in ./sak_example_output
 
 ## Credits
 [Nextflow](https://github.com/nextflow-io/nextflow):  Paolo Di Tommaso
