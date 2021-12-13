@@ -1,7 +1,7 @@
-# A json api for building and running nextflow workflow automaticlly
-Workflow for building pipeline from scratch with json input. SAKS for Swiss Army Knife Solution. <br />
-Once run completely, saks-nf will generate a complete and ready-to-go nextflow workflow, user can choose to rerun it with 'nextflow run' instead. <br />
-User can build single process or multiple processes workflow with a simple json file. <br />
+# An api for automatic building nextflow pipeline with json input
+API for building pipeline from json input without writing nextflow code from scratch. Swiss Army Knife Solution for nextflow (saks-nf).
+Once run completely, saks-nf will generate a completed and ready-to-go nextflow workflow. User can choose to run it immediatley or run it later with 'nextflow run' after manual examiniation.
+User can build single process or multiple processes workflow with a simple json file. 
 It is compatible with docker or local executer and run on various platform, such as local pc, hpc(slurm) or cloud with default config files in nextflow format (see example in ./config). 
 User can configure the requirement of the process,such as cpu, mem and timeout policy in the json file.
 By default, the workflow will generate timeline.html and report.html once the workflow complete in a user designate location.
@@ -31,7 +31,7 @@ The most convenient way is to install `saks-nf` is to git clone the xmzhuo/saks-
 * saks-nf: Workflows for for building 
 
 ```bash
-bash ./saks-nf/run.sh ./sak-nf/sak_data/example_io.json
+bash ./saks-nf/run.sh -f ./sak-nf/sak_data/example_io.json
 ```
 
 ```
@@ -40,6 +40,7 @@ Syntax: run.sh [-f|h|r|V|v]
     -f|--file         Json file as input.
     -h|--help         Print this Help.
     -r|--run          Running mode. run, otherwise compose
+    -n|--nfname       Name and location for the new workflow. Otherwise it will be named to match json file at the same location.
     -V|--version      Print software version and exit.
     -v|--verbose      Verbose.
 ```
@@ -100,7 +101,7 @@ input example files (json, bed, dict) locate in ./sak_data
 }
 ```
 
-### example_az.json is a demo for composing and running above workflow on cloud environment. with minor change you can use it for aws et al.
+### example_az.json is a demo for composing and above workflow on cloud environment. with minor change you can use it for aws et al.
 ```json
 {
 "title": "example saks-nf pipeline pipeline parameters",
@@ -172,7 +173,7 @@ Multiple tempoary files and docker/singularity image in work directory.
 ## Credits
 [Nextflow](https://github.com/nextflow-io/nextflow):  Paolo Di Tommaso
 
-[Singularity](https://www.docker.com): Docker
+[Docker](https://www.docker.com): Docker
 
 [Singularity](https://singularity.lbl.gov): Singularityware
 
