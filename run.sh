@@ -22,7 +22,7 @@ EOF
 }
 
 show_version(){ # Display Version
-     echo "sak-nf:v0.0.2" 
+     echo "sak-nf:v0.0.2.1" 
 }
 ############################################################
 # Process the input options.                               #
@@ -105,8 +105,17 @@ echo $File $Mode
 current=`pwd`
 DIRECTORY=`dirname $0`
 if [ $nfname ]; then echo $nfname; else nfname=${File%.*}-nf; echo $nfname; fi
+
+#check if designate directory exist avoid overriding
+if [ -d $nfname ]; then echo "$nfname exist, Please rename/remove it before running saks-nf"; exit 1; fi
+
 cp $DIRECTORY $nfname -r
 #cd $DIRECTORY
+
+#switch directory to avoid occasional java version error in nextflow
+cd $nfname
+cd $current
+
 #copy ./template.nf to ./main.nf
 #cp $DIRECTORY/template.nf $DIRECTORY/main.nf
 cp $nfname/template.nf $nfname/main.nf
@@ -221,9 +230,9 @@ sed -i '/\/\/ import modules/r new_module.txt' $nfname/main.nf
 # include process after "// compose workflow"
 sed -i '/\/\/ compose workflow/r new_steps.txt' $nfname/main.nf
 
-rm new_params.txt new_loginfo.txt new_module.txt new_steps.txt
+rm new_params.txt new_loginfo.txt new_module.txt new_steps.txt upitem.txt
 
-rm $nfname/template.nf $nfname/modules/sak_docker.nf $nfname/modules/sak.nf 
+rm $nfname/template.nf $nfname/modules/sak_docker.nf $nfname/modules/sak.nf $nfname/run.sh
 rm $nfname/sak_data -r
 rm $nfname/sak_example_output -r
 #get directory for work and report
