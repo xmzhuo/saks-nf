@@ -35,12 +35,13 @@ bash ./saks-nf/run.sh -f ./sak-nf/sak_data/example_io.json
 ```
 
 ```
-Syntax: run.sh [-f|h|r|V|v]
+    Syntax: run.sh [-i|h|r|o|f|V|v]
     options:
-    -f|--file         Json file as input.
+    -i|--input        Json file as input.
     -h|--help         Print this Help.
-    -r|--run          Running mode. run, otherwise compose
-    -n|--nfname       Name and location for the new workflow. Otherwise it will be named to match json file at the same location.
+    -r|--run          Running mode. run, otherwise compose.
+    -o|--output       Name and location for the new workflow. Otherwise it will be named to match json file at the same location.
+    -f|--force        Force overwting existing output (if exisit), otherwise exit.
     -V|--version      Print software version and exit.
     -v|--verbose      Verbose.
 ```
@@ -157,6 +158,7 @@ input example files (json, bed, dict) locate in ./sak_data
 For running on cloud, please fill in the user name and credential in the config files accordingly or modify it to meet your need.
 For Azure, you can configure the queue machine type directly on the azure.configure
 For AWS, you can configure the queue machine type and policy on aws website. [Example from antunderwood](https://antunderwood.gitlab.io/bioinformant-blog/posts/running_nextflow_on_aws_batch/)
+For slurm, you may need to define the cpu and memory in sbatch sh (sometimes slurm won't recognize the command in certian hpc), it also recommend to compose first then nextflow run the new composed nextflow folder with -profile slurm
 
 ### result of 'bash saks-nf/run.sh saks-nf/example1.json'
 

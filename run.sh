@@ -9,12 +9,13 @@ cat << EOF
     script to automatically generate nextflow 
     bash run.sh -f example.json -r
 
-    Syntax: run.sh [-f|h|r|n|V|v]
+    Syntax: run.sh [-i|h|r|o|f|V|v]
     options:
-    -f|--file         Json file as input.
+    -i|--input        Json file as input.
     -h|--help         Print this Help.
     -r|--run          Running mode. run, otherwise compose.
-    -n|--nfname       Name and location for the new workflow. Otherwise it will be named to match json file at the same location.
+    -o|--output       Name and location for the new workflow. Otherwise it will be named to match json file at the same location.
+    -f|--force        Force overwting existing output (if exisit), otherwise exit.
     -V|--version      Print software version and exit.
     -v|--verbose      Verbose.
 
@@ -22,7 +23,7 @@ EOF
 }
 
 show_version(){ # Display Version
-     echo "sak-nf:v0.0.2.1" 
+     echo "sak-nf:v0.0.2.2" 
 }
 ############################################################
 # Process the input options.                               #
@@ -33,6 +34,7 @@ File="json"
 Mode="compose"
 verbose=0
 nfname=''
+Force='Not'
 
 while :; do
      case $1 in
@@ -40,7 +42,7 @@ while :; do
              show_help    
              exit
              ;;
-         -f|--file)       # Takes an option argument; ensure it has been specified.
+         -i|--input)       # Takes an option argument; ensure it has been specified.
              if [ "$2" ]; then
                  File=$2
                  shift
@@ -48,16 +50,16 @@ while :; do
                  die 'ERROR: "--file" requires a non-empty option argument.'
              fi
              ;;
-         --file=?*)
+         --input=?*)
              file=${1#*=} # Delete everything up to "=" and assign the remainder.
              ;;
-         --file=)         # Handle the case of an empty --file=
+         --input=)         # Handle the case of an empty --file=
              die 'ERROR: "--file" requires a non-empty option argument.'
              ;;
          -r|--run)
              Mode="run"  # running mode, otherwise composing only.
              ;;
-         -n|--nfname)
+         -o|--output)
              if [ "$2" ]; then
                  nfname=$2
                  shift
@@ -65,11 +67,14 @@ while :; do
                  die 'ERROR: "--nfname" requires a non-empty option argument.'
              fi
              ;;
-         --nfname=?*)
+         --output=?*)
              nfname=${1#*=} # Delete everything up to "=" and assign the remainder.
              ;;
-         --nfname=)         # Handle the case of an empty --file=
+         --output=)         # Handle the case of an empty --file=
              die 'ERROR: "--nfname" requires a non-empty option argument.'
+             ;;
+         -f|--force)
+             Force="force"  # running mode, otherwise composing only.
              ;;
          -V|--version)
              show_version
@@ -106,8 +111,15 @@ current=`pwd`
 DIRECTORY=`dirname $0`
 if [ $nfname ]; then echo $nfname; else nfname=${File%.*}-nf; echo $nfname; fi
 
-#check if designate directory exist avoid overriding
-if [ -d $nfname ]; then echo "$nfname exist, Please rename/remove it before running saks-nf"; exit 1; fi
+#check if designate directory exist avoid overriding if not force flag
+if [ -d $nfname ]; then
+    if [ $Force == 'force' ]; then
+        rm $nfname -r
+    else 
+        echo "$nfname exist, Please rename/remove it before running saks-nf"
+        exit 1
+    fi
+fi
 
 cp $DIRECTORY $nfname -r
 #cd $DIRECTORY
