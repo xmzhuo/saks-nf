@@ -31,7 +31,7 @@ The most convenient way is to install `saks-nf` is to git clone the xmzhuo/saks-
 * saks-nf: Workflows for for building 
 
 ```bash
-bash ./saks-nf/run.sh -f ./sak-nf/sak_data/example_io.json
+bash ./saks-nf/run.sh -i ./sak-nf/sak_data/example_io.json
 ```
 
 ```
