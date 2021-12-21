@@ -23,7 +23,7 @@ EOF
 }
 
 show_version(){ # Display Version
-     echo "sak-nf:v0.0.2.2" 
+     echo "sak-nf:v0.0.2.3" 
 }
 ############################################################
 # Process the input options.                               #
@@ -149,7 +149,13 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     initem=$(cat $inputjson | jq .process.${step}.input | jq 'paths | join ("_")' -r)
     inpath=$(echo $(cat $inputjson | jq .process.${step}.input | jq 'paths | join ("_")' -r | sed "s/^/path__/") | sed 's/ /\\n/g' | sed 's/__/ /g')
     invar=$(echo $(cat $inputjson | jq .process.${step}.input | jq 'paths | join ("_")' -r | sed 's/^/!{/' | sed 's/$/}/') | sed 's/ /, /g')
-    #get poutput keys from json
+    #get upstream keys from json, convert bed2interval.file to bedeinterval_file for vriable handeling
+    upitem=$(cat $inputjson | jq .process.${step}.upstream | jq 'join (" ")' -r | sed 's/\./_/g')
+    uppath=$(echo $(cat $inputjson | jq .process.${step}.upstream | jq 'join ("\n")' -r | sed 's/\./_/g' | sed 's/^/path__/') | sed 's/ /\\n/g' | sed 's/__/ /g' )
+    upvar=$(echo $(cat $inputjson | jq .process.${step}.upstream | jq 'join ("\n")' -r | sed 's/\./_/g' | sed 's/^/!{/' | sed 's/$/}/') | sed 's/ /, /g')
+    if [ $(echo $upitem | wc -c) -lt 5 ]; then uppath=""; upvar=""; fi
+
+    #get output keys from json
     outitem=$(cat $inputjson | jq .process.${step}.output | jq 'paths | join ("_")' -r)
     cat $inputjson | jq .process.${step}.output | grep :  | sed "s/\s\"//g" | sed 's/\"//g' | sed 's/\,$//' \
     | awk -F':' '{print "    path \""$2"\", emit:"$1}' > output.tmp
@@ -159,10 +165,12 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     # generate process for step, first fix argument, then input, then output
     cat $nfname/modules/sak.nf | sed "s/SAK/${step^^}/" | sed '/#bash advarg_temp.sh/r arg_temp.txt' \
     | sed "s/path input/$inpath/" | sed "s/\!{input}/${invar}/" \
+    | sed "s/path upstream/$uppath/" | sed "s/\!{upstream}/${upvar}/" \
     | sed '/output:/r output.tmp' | grep -v ", emit: out"> $nfname/modules/${step}.nf
     
     cat $nfname/modules/sak_docker.nf | sed "s/SAK/${step^^}/" | sed '/#bash advarg_temp.sh/r arg_temp.txt' \
     | sed "s/path input/$inpath/" | sed "s/\!{input}/${invar}/" \
+    | sed "s/path upstream/$uppath/" | sed "s/\!{upstream}/${upvar}/" \
     | sed '/output:/r output.tmp' | grep -v ", emit: out"> $nfname/modules/${step}_docker.nf
     
     #cat $nfname/modules/sak_docker.nf | sed "s/SAK/${step^^}/" | sed '/#bash advarg_temp.sh/r arg_temp.txt' > $nfname/modules/${step}_docker.nf
@@ -215,9 +223,11 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
         echo $upstep >> upitem.txt
     done 
    
-    upitem=$(cat upitem.txt | sed 1d | sed 's/ /, /g')
-    if [ $(echo $upitem | wc -c) -gt 5 ]; then upitem=".concat(${upitem})|collect"; else upitem=""; fi
-    
+    #upitem=$(cat upitem.txt | sed 1d | sed 's/ /, /g')
+    #if [ $(echo $upitem | wc -c) -gt 5 ]; then upitem=".concat(${upitem})|collect"; else upitem=""; fi
+    upitem=$(echo $(cat upitem.txt | sed 1d) | sed 's/ /, /g')
+    if [ $(echo $upitem | wc -c) -gt 5 ]; then upitem="$upitem,"; fi
+
     #compose step cmd example
     
     for item in $initem; do
@@ -227,7 +237,9 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     itemfile=$(echo $(cat $inputjson | jq .process.${step}.input | jq 'paths | join ("_")' -r | sed "s/^/${step^^}_/") | sed 's/ /,/g')
     cat $nfname/template.nf | grep "* ## step cmd example" -A10 | tail -n9 | sed 's/\*//' \
     | sed "s/SAK/${step^^}/g" | sed "s/params./params.${step}_/g" | sed "s/Var_/${step^^}_/g" \
-    | sed "s/.concat_upstream/$upitem/" | sed "s/${step^^}_InFiles/$itemfile/g" >> new_steps.txt
+    | grep -v "${step^^}_UpStream.view" | grep -v "${step^^}_UpStream =" \
+    | sed "s/${step^^}_InFiles/$itemfile/g" | sed "s/${step^^}_UpStream,/$upitem/g" >> new_steps.txt
+    #| sed "s/.concat_upstream/$upitem/" | sed "s/${step^^}_InFiles/$itemfile/g" >> new_steps.txt
 
 done 
 # add new params after "// compose params"
