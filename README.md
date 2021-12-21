@@ -89,10 +89,10 @@ input example files (json, bed, dict) locate in ./sak_data
             "file" : "*.interval_list",
             "log" : "*.log"
         },
-        "upstream" : ["bed2interval.file"],                                         # assign specif output from upstream process
+        "upstream" : ["bed2interval.file"],                                         # assign specif output from upstream process, the specific upstream input is an available variable in the argument(to use the variable, process.out should be converted to process_out)
         "script" : "",                                                              # if not script is needed
         "dockerimg" : "",                                                           # use local environment rather than docker
-        "argument" : "file=$(ls *.interval_list); cat $file | sed 's/^/chr/' > ${file%.*}.chr.interval_list",
+        "argument" : "file=!{bed2interval_file}; cat $file | sed 's/^/chr/' > ${file%.*}.chr.interval_list",
         "outputDir" : "./results/addchr",
         "sakcpu" : "2",
         "sakmem" : "4.GB",
