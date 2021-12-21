@@ -23,7 +23,7 @@ EOF
 }
 
 show_version(){ # Display Version
-     echo "sak-nf:v0.0.2.3" 
+     echo "sak-nf:v0.0.3.0" 
 }
 ############################################################
 # Process the input options.                               #
@@ -161,7 +161,11 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     | awk -F':' '{print "    path \""$2"\", emit:"$1}' > output.tmp
 
     #check argument and generate an insertion for argument shell script
-    { echo $(cat $inputjson | jq .process | jq .${step} | jq .argument -r | sed 's/\$/\\$/g'); echo '2>&1 | tee -a sak-nf_\$(date '+%Y%m%d_%H%M').log'; } | tr "\n" " " | sed 's/;/\n/g' > arg_temp.txt
+    { echo $(cat $inputjson | jq .process | jq .${step} | jq .argument -r | sed 's/\$/\\$/g'); echo '2>&1 | tee -a sak-nf_\$(date '+%Y%m%d_%H%M%S').log'; } | tr "\n" " " | sed 's/;/\n/g' > arg_temp.txt
+    echo "" >> arg_temp.txt
+    echo "outfileval=$(cat $inputjson | jq .process.${step}.output | jq 'join ("\n")' -r | grep -v .log)" >> arg_temp.txt
+    echo 'logname=\$(ls *.log | grep sak-nf); echo "# md5sum #" >> \${logname};md5sum \${outfileval} >> \${logname}; logmd5=\$(md5sum \${logname} | sed "s/ /_/g"); mv \${logname} \${logmd5}' | sed 's/;/\n/g' >> arg_temp.txt
+    
     # generate process for step, first fix argument, then input, then output
     cat $nfname/modules/sak.nf | sed "s/SAK/${step^^}/" | sed '/#bash advarg_temp.sh/r arg_temp.txt' \
     | sed "s/path input/$inpath/" | sed "s/\!{input}/${invar}/" \
@@ -186,7 +190,7 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     ###change the main.nf
     #compose params insertion, first exclude upstream, input and output, then clean up the format, finally handle the $ in argument
     cat $inputjson | jq .process | jq .${step} \
-    | jq 'del(.upstream, .input, .output)' \
+    | jq 'del(.upstream, .input, .output, .inputpairing)' \
     | grep ':' | sed "s/^\s*\"/params.${step}_/" | sed 's/\"\:/ =/' | sed 's/\,$//' \
     | sed 's/\$/\\$/g'  >> new_params.txt
     
@@ -213,9 +217,9 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
             upimg=$(cat $inputjson | jq .process | jq .${upstep}.dockerimg -r)
             #if [ $(echo $upimg | wc -c) -gt 1 ]; then upstep=${upstep^^}DOC.out; else upstep=${upstep^^}.out; fi
             if [ $(echo $upimg | wc -c) -gt 1 ]; then 
-                upstep=${upsteph^^}DOC.out.${upstept}
+                upstep="${upsteph^^}DOC.out.${upstept}.collect()"
             else 
-                upstep=${upsteph^^}.out.${upstept}
+                upstep="${upsteph^^}.out.${upstept}.collect()"
             fi
         else
             upstep=""
@@ -231,8 +235,17 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     #compose step cmd example
     
     for item in $initem; do
-        cat $nfname/template.nf | grep "* ## step cmd example" -A1 | sed 's/\*//' \
-        | sed "s/Var_InFiles/${step^^}_${item}/g" | sed "s/params.input/params.${step}_input_${item}/g">> new_steps.txt  
+        pairpattern=$(cat $inputjson | jq ".process.${step}.inputpairing.$item | length")
+        if [ $pairpattern -gt 0 ]; then 
+            #inputitem=$(ls $(cat $inputjson | jq .process.${step}.input.${item} -r) | grep $pairpattern | sed "s/${pairpattern}/\*/")
+            #regroup files by pattern number as pairing, allow parallel processing
+            cat $nfname/template.nf | grep "* ## step cmd example" -A1 | sed 's/\*//' \
+            | sed "s/fromPath(params.input).toSortedList()/fromPath(params.input).buffer(size : $pairpattern)/g" \
+            | sed "s/Var_InFiles/${step^^}_${item}/g" | sed "s/params.input/params.${step}_input_${item}/g" >> new_steps.txt 
+        else
+            cat $nfname/template.nf | grep "* ## step cmd example" -A1 | sed 's/\*//' \
+            | sed "s/Var_InFiles/${step^^}_${item}/g" | sed "s/params.input/params.${step}_input_${item}/g">> new_steps.txt 
+        fi 
     done
     itemfile=$(echo $(cat $inputjson | jq .process.${step}.input | jq 'paths | join ("_")' -r | sed "s/^/${step^^}_/") | sed 's/ /,/g')
     cat $nfname/template.nf | grep "* ## step cmd example" -A10 | tail -n9 | sed 's/\*//' \
