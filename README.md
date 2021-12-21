@@ -162,7 +162,7 @@ For Azure, you can configure the queue machine type directly on the azure.config
 For AWS, you can configure the queue machine type and policy on aws website. [Example from antunderwood](https://antunderwood.gitlab.io/bioinformant-blog/posts/running_nextflow_on_aws_batch/)
 For slurm, you may need to define the cpu and memory in sbatch sh (sometimes slurm won't recognize the command in certian hpc), it also recommend to compose first then nextflow run the new composed nextflow folder with -profile slurm
 
-###  example_io-parallel;.json is a demo for composing and run two process workflow when paralelization is need. The first process uses gatk docker image to convert 6 bed files to 3 interval_list. The pairing strategy is 4.large.bed concatenate with 4.small.bed and generate a 4.bed then convert the 4.bed to 4.bed.intervallist. This step is paralized by create three process,4.d, 5.bed and 6.bed. The second process collecting all the result (3) and add chr to chromosome in interval_list (3). This example show the basic element of the json schema of saks-nf. 
+###  example_io-parallel;.json is a demo for composing and run two process workflow when paralelization is need. The first process uses gatk docker image to convert 6 bed files to 3 interval_list. The pairing strategy is 4.large.bed concatenate with 4.small.bed and generate a 4.bed then convert the 4.bed to 4.bed.intervallist. This step is parallelized by create three process,4.d, 5.bed and 6.bed. The second process collecting all the result (3) and add chr to chromosome in interval_list (3). This example show the basic element of the json schema of saks-nf. 
 
 ```json
 {
