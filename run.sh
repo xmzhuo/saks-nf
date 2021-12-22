@@ -23,7 +23,7 @@ EOF
 }
 
 show_version(){ # Display Version
-     echo "sak-nf:v0.0.3.0" 
+     echo "sak-nf:v0.0.3.1" 
 }
 ############################################################
 # Process the input options.                               #
@@ -190,7 +190,7 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     ###change the main.nf
     #compose params insertion, first exclude upstream, input and output, then clean up the format, finally handle the $ in argument
     cat $inputjson | jq .process | jq .${step} \
-    | jq 'del(.upstream, .input, .output, .inputpairing)' \
+    | jq 'del(.upstream, .input, .output, .inputpairing, .upstreampairing)' \
     | grep ':' | sed "s/^\s*\"/params.${step}_/" | sed 's/\"\:/ =/' | sed 's/\,$//' \
     | sed 's/\$/\\$/g'  >> new_params.txt
     
@@ -212,14 +212,21 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     echo "" > upitem.txt
     for upstep in $upitems; do
         if [ $(echo $upstep | wc -c) -gt 1 ]; then
+            upstepkey=$(echo $upstep | sed 's/\./_/g') #get the key in pairing
+            pairpattern=$(cat $inputjson | jq ".process.${step}.upstreampairing.${upstepkey} | length")
+            #modify the upstream input to meet process
             upsteph=${upstep%.*}
             upstept=$(echo ${upstep} | sed 's/^.*\.//')
-            upimg=$(cat $inputjson | jq .process | jq .${upstep}.dockerimg -r)
-            #if [ $(echo $upimg | wc -c) -gt 1 ]; then upstep=${upstep^^}DOC.out; else upstep=${upstep^^}.out; fi
+            upimg=$(cat $inputjson | jq .process | jq .${upsteph}.dockerimg -r) #fix an issue with the upstream process name upstep > upsteph
+            
             if [ $(echo $upimg | wc -c) -gt 1 ]; then 
                 upstep="${upsteph^^}DOC.out.${upstept}.collect()"
             else 
                 upstep="${upsteph^^}.out.${upstept}.collect()"
+            fi
+            #allow parallel of the upstream input
+            if [ $pairpattern -gt 0 ]; then 
+                upstep=${upstep}'.sort().flatten().buffer(size:'$pairpattern')'
             fi
         else
             upstep=""
@@ -240,7 +247,7 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
             #inputitem=$(ls $(cat $inputjson | jq .process.${step}.input.${item} -r) | grep $pairpattern | sed "s/${pairpattern}/\*/")
             #regroup files by pattern number as pairing, allow parallel processing
             cat $nfname/template.nf | grep "* ## step cmd example" -A1 | sed 's/\*//' \
-            | sed "s/fromPath(params.input).toSortedList()/fromPath(params.input).buffer(size : $pairpattern)/g" \
+            | sed "s/fromPath(params.input).toSortedList()/fromPath(params.input).toSortedList().flatten().buffer(size : $pairpattern)/g" \
             | sed "s/Var_InFiles/${step^^}_${item}/g" | sed "s/params.input/params.${step}_input_${item}/g" >> new_steps.txt 
         else
             cat $nfname/template.nf | grep "* ## step cmd example" -A1 | sed 's/\*//' \

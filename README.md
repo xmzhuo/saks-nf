@@ -6,7 +6,7 @@ Saks is compatible with docker or local executer and run on various platform, su
 User can configure the requirement of the process,such as cpu, mem and timeout policy in the json file. <br />
 By default, the workflow will generate timeline.html and report.html once the workflow complete in a user designate location. <br />
 The user have the option to generate a log file as output, the md5sum with be appended to the end of log file. <br />
-Since v0.0.3.0, saks support parallel by optionally including a "inputpairing" key with pattern of interest. <br />
+Since v0.0.3.0, saks support parallel by optionally including a "inputpairing" or "upstreampairing" key with pattern of interest. <br />
 
 ## Installation
 
@@ -52,7 +52,9 @@ bash ./saks-nf/run.sh -i ./sak-nf/sak_data/example_io.json
 
 input example files (json, bed, dict) locate in ./sak_data
 
-### example_io.json is a demo for composing and run two process workflow. The first process uses gatk docker image to convert bed file to interval_list. The second process add chr to chromosome in interval_list. This example show the basic element of the json schema of saks-nf. 
+
+### * example_io.json is a demo for composing and run two process workflow. The first process uses gatk docker image to convert bed file to interval_list. The second process add chr to chromosome in interval_list. This example show the basic element of the json schema of saks-nf. The example nextflow script and result can be found in ./sak_example_output/standard.
+![example](/sak_example_output/example-flowchart.png)
 
 ```json
 {
@@ -104,7 +106,8 @@ input example files (json, bed, dict) locate in ./sak_data
 }
 ```
 
-### example_az.json is a demo for composing and above workflow on cloud environment. with minor change you can use it for aws et al.
+### * example_az.json is a demo for composing and above workflow on cloud environment. with minor change you can use it for aws et al.
+
 ```json
 {
 "title": "example saks-nf pipeline pipeline parameters",
@@ -162,7 +165,9 @@ For Azure, you can configure the queue machine type directly on the azure.config
 For AWS, you can configure the queue machine type and policy on aws website. [Example from antunderwood](https://antunderwood.gitlab.io/bioinformant-blog/posts/running_nextflow_on_aws_batch/)
 For slurm, you may need to define the cpu and memory in sbatch sh (sometimes slurm won't recognize the command in certian hpc), it also recommend to compose first then nextflow run the new composed nextflow folder with -profile slurm
 
-###  example_io-parallel;.json is a demo for composing and run two process workflow when paralelization is need. The first process uses gatk docker image to convert 6 bed files to 3 interval_list. The pairing strategy is 4.large.bed concatenate with 4.small.bed and generate a 4.bed then convert the 4.bed to 4.bed.intervallist. This step is parallelized by create three process,4.d, 5.bed and 6.bed. The second process collecting all the result (3) and add chr to chromosome in interval_list (3). This example show the basic element of the json schema of saks-nf. 
+
+### * example_io-parallel;.json is a demo for composing and run two process workflow when paralelization is need. The first process uses gatk docker image to convert 6 bed files to 3 interval_list. The pairing strategy is 4.large.bed concatenate with 4.small.bed and generate a 4.bed then convert the 4.bed to 4.bed.intervallist. This step is paralized by create three process,4.d, 5.bed and 6.bed. The second process collecting all the result (3) and add chr to chromosome in interval_list (3). This example show the basic element of the json schema of saks-nf. The example nextflow script and result can be found in ./sak_example_output/parallel.
+![example-parallel](/sak_example_output/example-parallel-flowchart.png)
 
 ```json
 {
@@ -215,9 +220,82 @@ For slurm, you may need to define the cpu and memory in sbatch sh (sometimes slu
 }
 }
 ```
- 
 
-### result of 'bash saks-nf/run.sh saks-nf/example.json' is exhibited in ./sak_example_output, seperate into standard and parallel accordinly.
+
+### * example_io-scattergather;.json is a demo for composing and run scatter gather. The first process scatter a bed file by chromosome. The second process uses gatk docker image to convert each chromosome bed file to interval_list in prarallel. The third process collecting all the intervallist from all bed2interval processes and add chr to chromosome in interval_list. The example nextflow script and result can be found in ./sak_example_output/scattergather.
+![example-scattergather](/sak_example_output/example-scattergather-flowchart.png)
+
+```json
+{
+"title": "example saks-nf pipeline pipeline parameters",
+"description": "Proof of concept of a saks pipeline implemented with Nextflow",
+"type": "workflow",
+"profile": "standard",
+"workdir": "./saks-work",
+"reportdir": "./saks-report",
+"process": {
+    "scatter" : {                                                        # Process of scatter input files and allow next process to run in parallel 
+        "name" : "scatter",
+        "input" : {
+            "file" : "./sak_data/test.bed"
+        },
+        "output" : {
+            "file" : "*.bed",
+            "log" : "*.log"
+        },
+        "upstream" : [""],                                              
+        "script" : "",
+        "dockerimg" : "",
+        "argument" : "for chr in $(cat !{file} | awk '{print $1}' | sort | uniq); do echo $chr; cat !{file} | awk -v var=$chr '{if($1 == var) print}' > $chr.bed; done",
+        "outputDir" : "./results/scatter",
+        "sakcpu" : "1",
+        "sakmem" : "1.GB",
+        "saktime" : "1.hour"
+    },
+    "bed2interval" : {
+        "name" : "bed2interval",
+        "input" : {
+            "dict" : "./sak_data/*.dict"
+        },
+        "output" : {
+            "file" : "*.interval_list",
+            "log" : "*.log"
+        },
+        "upstream" : ["scatter.file"],
+        "upstreampairing" : {                                            # Parallele is allowed by including a key and value of pairing strategy, by default the parallel is off if upstreampairing is not provided
+            "scatter_file" : ["bed"]
+        },
+        "script" : "./sak_data/test.sh",
+        "dockerimg" : "broadinstitute/gatk:4.2.2.0",
+        "argument" : "bash !{script} !{scatter_file} human_g1k_v37_decoy.dict",
+        "outputDir" : "./results/bed2interval",
+        "sakcpu" : "2",
+        "sakmem" : "4.GB",
+        "saktime" : "1.hour"
+    },
+    "addchr" : {
+        "name" : "addchr",
+        "input" : {
+            "file" : ""
+        },
+        "output" : {
+            "file" : "*.interval_list",
+            "log" : "*.log"
+        },
+        "upstream" : ["bed2interval.file"],
+        "script" : "",
+        "dockerimg" : "",
+        "argument" : "for file in !{bed2interval_file}; do cat $file |  awk '{if($1 !~ \"@\") $1=\"chr\"$1; print}' > ${file%.*}.chr.interval_list; done",
+        "outputDir" : "./results/addchr",
+        "sakcpu" : "2",
+        "sakmem" : "4.GB",
+        "saktime" : "1.hour"
+    }
+}
+}
+```
+
+### result of 'bash saks-nf/run.sh saks-nf/example.json' is exhibited in ./sak_example_output, seperate into standard, parallel and scattergather accordinly.
 
 1. Compose nextflow pipeline
 Create a main.nf from template.nf; Create multiple sub-worflow porcess in ./module
