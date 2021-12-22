@@ -1,0 +1,15 @@
+18:54:59.163 INFO  NativeLibraryLoader - Loading libgkl_compression.so from jar:file:/gatk/gatk-package-4.2.2.0-local.jar!/com/intel/gkl/native/libgkl_compression.so
+[Wed Dec 22 18:54:59 GMT 2021] BedToIntervalList --INPUT 22.bed --SEQUENCE_DICTIONARY human_g1k_v37_decoy.dict --OUTPUT 22.bed.interval_list --SORT true --UNIQUE false --DROP_MISSING_CONTIGS false --VERBOSITY INFO --QUIET false --VALIDATION_STRINGENCY STRICT --COMPRESSION_LEVEL 2 --MAX_RECORDS_IN_RAM 500000 --CREATE_INDEX false --CREATE_MD5_FILE false --GA4GH_CLIENT_SECRETS client_secrets.json --help false --version false --showHidden false --USE_JDK_DEFLATER false --USE_JDK_INFLATER false
+Dec 22, 2021 6:54:59 PM shaded.cloud_nio.com.google.auth.oauth2.ComputeEngineCredentials runningOnComputeEngine
+INFO: Failed to detect whether we are running on Google Compute Engine.
+[Wed Dec 22 18:54:59 GMT 2021] Executing as root@af4ff6dbe228 on Linux 5.10.16.3-microsoft-standard-WSL2 amd64; OpenJDK 64-Bit Server VM 1.8.0_242-8u242-b08-0ubuntu3~18.04-b08; Deflater: Intel; Inflater: Intel; Provider GCS is available; Picard version: Version:4.2.2.0
+INFO	2021-12-22 18:54:59	BedToIntervalList	Wrote 46 intervals spanning a total of 6630 bases
+[Wed Dec 22 18:54:59 GMT 2021] picard.util.BedToIntervalList done. Elapsed time: 0.01 minutes.
+Runtime.totalMemory()=219152384
+Tool returned:
+0
+Using GATK jar /gatk/gatk-package-4.2.2.0-local.jar
+Running:
+    java -Dsamjdk.use_async_io_read_samtools=false -Dsamjdk.use_async_io_write_samtools=true -Dsamjdk.use_async_io_write_tribble=false -Dsamjdk.compression_level=2 -jar /gatk/gatk-package-4.2.2.0-local.jar BedToIntervalList -I 22.bed -O 22.bed.interval_list -SD human_g1k_v37_decoy.dict
+# md5sum #
+07484fb63405722aca33616001f72397  22.bed.interval_list
