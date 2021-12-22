@@ -55,7 +55,7 @@ input example files (json, bed, dict) locate in ./sak_data
 
 ### * example_io.json is a demo for composing and run two process workflow. The first process uses gatk docker image to convert bed file to interval_list. The second process add chr to chromosome in interval_list. This example show the basic element of the json schema of saks-nf. The example nextflow script and result can be found in ./sak_example_output/standard.
 ![example](/sak_example_output/example-flowchart.png)
-![html](/sak_example_output/standard/results/example_io.20211221_1150.timeline)
+![html](/sak_example_output/standard/results/example_io.20211221_1150.timeline.html)
 ```json
 {
 "title": "example saks-nf pipeline one process",                                    # Title of workflow
