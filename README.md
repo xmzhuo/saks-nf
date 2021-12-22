@@ -43,7 +43,7 @@ bash ./saks-nf/run.sh -i ./sak-nf/sak_data/example_io.json
     -h|--help         Print this Help.
     -r|--run          Running mode. run, otherwise compose.
     -o|--output       Name and location for the new workflow. Otherwise it will be named to match json file at the same location.
-    -f|--force        Force overwting existing output (if exisit), otherwise exit.
+    -f|--force        Force overwriting existing output (if exisit), otherwise exit.
     -V|--version      Print software version and exit.
     -v|--verbose      Verbose.
 ```
