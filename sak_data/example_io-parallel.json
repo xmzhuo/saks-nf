@@ -1,0 +1,49 @@
+{
+    "title": "example saks-nf pipeline pipeline parameters",
+    "description": "Proof of concept of a saks pipeline implemented with Nextflow",
+    "type": "workflow",
+    "profile": "standard",
+    "workdir": "./saks-work",
+    "reportdir": "./saks-report",
+    "process": {
+        "bed2interval" : {
+            "name" : "bed2interval",
+            "input" : {
+                "bed" : "./sak_data/*{small,large}.bed",
+                "dict" : "./sak_data/*.dict"
+            },
+            "inputpairing" : {
+                "bed" : ["large","small"]
+            },
+            "output" : {
+                "file" : "*.interval_list",
+                "log" : "*.log"
+            },
+            "upstream" : [""],
+            "script" : "./sak_data/test.sh",
+            "dockerimg" : "broadinstitute/gatk:4.2.2.0",
+            "argument" : "name=!{bed[0]}; echo $name; cat !{bed} > ${name%%.*}.bed; bash !{script} ${name%%.*}.bed human_g1k_v37_decoy.dict",
+            "outputDir" : "./results/bed2interval",
+            "sakcpu" : "2",
+            "sakmem" : "4.GB",
+            "saktime" : "1.hour"
+        },
+        "addchr" : {
+            "name" : "addchr",
+            "input" : {
+                "file" : ""
+            },
+            "output" : {
+                "file" : "*.interval_list"
+            },
+            "upstream" : ["bed2interval.file"],
+            "script" : "",
+            "dockerimg" : "",
+            "argument" : "for file in !{bed2interval_file}; do cat $file |  awk '{if($1 !~ \"@\") $1=\"chr\"$1; print}' > ${file%.*}.chr.interval_list; done",
+            "outputDir" : "./results/addchr",
+            "sakcpu" : "2",
+            "sakmem" : "4.GB",
+            "saktime" : "1.hour"
+        }
+    }
+}
