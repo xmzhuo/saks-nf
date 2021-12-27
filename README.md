@@ -310,6 +310,8 @@ Multiple tempoary files and docker/singularity image in work directory.
 ## Credits
 [Nextflow](https://github.com/nextflow-io/nextflow):  Paolo Di Tommaso
 
+[JSON](https://www.json.org) : JSON
+
 [Docker](https://www.docker.com): Docker
 
 [Singularity](https://singularity.lbl.gov): Singularityware
