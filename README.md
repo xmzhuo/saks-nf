@@ -317,5 +317,5 @@ Multiple tempoary files and docker/singularity image in work directory.
 [Singularity](https://singularity.lbl.gov): Singularityware
 
 ### Notes
-The argument in json do not support some operation for native variable !{var}; such as !{var%.txt}.
+The argument in json do not support some operation for native variable !{var}; such as !{var%.txt}. <br />
 THe argument in json do not support sed for escaping special character, such as sed 's/\.*//' .
