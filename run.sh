@@ -164,7 +164,7 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     { echo $(cat $inputjson | jq .process | jq .${step} | jq .argument -r | sed 's/\$/\\$/g'); echo '2>&1 | tee -a sak-nf_\$(date '+%Y%m%d_%H%M%S').log'; } | tr "\n" " " | sed 's/;/\n/g' > arg_temp.txt
     echo "" >> arg_temp.txt
     #echo "outfileval=$(cat $inputjson | jq .process.${step}.output | jq 'join ("\n")' -r | grep -v .log)" >> arg_temp.txt
-    echo "outfileval=$(cat $inputjson | jq .process.${step}.output | jq 'join (" ")' -r | sed 's/\*.log//')" >> arg_temp.txt
+    echo "outfileval=\"$(cat $inputjson | jq .process.${step}.output | jq 'join (" ")' -r | sed 's/\*.log//')\"" >> arg_temp.txt
     echo 'logname=\$(ls *.log | grep sak-nf); echo "# md5sum #" >> \${logname};md5sum \${outfileval} >> \${logname}; logmd5=\$(md5sum \${logname} | sed "s/ /_/g"); mv \${logname} \${logmd5}' | sed 's/;/\n/g' >> arg_temp.txt
     
     # generate process for step, first fix argument, then input, then output
