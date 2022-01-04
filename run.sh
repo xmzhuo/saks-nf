@@ -15,7 +15,7 @@ cat << EOF
     -h|--help         Print this Help.
     -r|--run          Running mode. run, otherwise compose.
     -o|--output       Name and location for the new workflow. Otherwise it will be named to match json file at the same location.
-    -f|--force        Force overwting existing output (if exisit), otherwise exit.
+    -f|--force        Force overwriting existing output (if exisit), otherwise exit.
     -V|--version      Print software version and exit.
     -v|--verbose      Verbose.
 
@@ -23,7 +23,7 @@ EOF
 }
 
 show_version(){ # Display Version
-     echo "sak-nf:v0.0.3.1" 
+     echo "sak-nf:v0.0.3.2" 
 }
 ############################################################
 # Process the input options.                               #
@@ -163,7 +163,8 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     #check argument and generate an insertion for argument shell script
     { echo $(cat $inputjson | jq .process | jq .${step} | jq .argument -r | sed 's/\$/\\$/g'); echo '2>&1 | tee -a sak-nf_\$(date '+%Y%m%d_%H%M%S').log'; } | tr "\n" " " | sed 's/;/\n/g' > arg_temp.txt
     echo "" >> arg_temp.txt
-    echo "outfileval=$(cat $inputjson | jq .process.${step}.output | jq 'join ("\n")' -r | grep -v .log)" >> arg_temp.txt
+    #echo "outfileval=$(cat $inputjson | jq .process.${step}.output | jq 'join ("\n")' -r | grep -v .log)" >> arg_temp.txt
+    echo "outfileval=$(cat $inputjson | jq .process.${step}.output | jq 'join (" ")' -r | sed 's/\*.log//')" >> arg_temp.txt
     echo 'logname=\$(ls *.log | grep sak-nf); echo "# md5sum #" >> \${logname};md5sum \${outfileval} >> \${logname}; logmd5=\$(md5sum \${logname} | sed "s/ /_/g"); mv \${logname} \${logmd5}' | sed 's/;/\n/g' >> arg_temp.txt
     
     # generate process for step, first fix argument, then input, then output
