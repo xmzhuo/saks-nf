@@ -319,5 +319,5 @@ Multiple tempoary files and docker/singularity image in work directory.
 ### Notes
 The argument in json do not support some operation for native variable !{var}; such as !{var%.txt}. <br />
 The argument in json do not support sed for escaping special character, such as sed 's/\.*//' . <br />
-You can run docker directly from "argument", such as "docker run --rm -v $(pwd):$(pwd) broadinstitute/gatk gatk" <br />
+You can run docker directly from "argument", such as "docker run --rm -v $(pwd):$(pwd) broadinstitute/gatk gatk", which can be used to run multiple docker in one process as long as your environment support docker <br />
 
