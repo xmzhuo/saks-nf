@@ -317,6 +317,6 @@ Multiple tempoary files and docker/singularity image in work directory.
 [Singularity](https://singularity.lbl.gov): Singularityware
 
 ### Notes
-The "argument" in json does not support some operation for native variable !{var}; such as !{var%.txt}. It aslo does not support sed for escaping special character, such as sed 's/\.*//' . <br />
-You can run docker directly from "argument", such as "docker run --rm -v $(pwd):$(pwd) broadinstitute/gatk gatk", which can be used to run multiple docker in one process as long as your environment support docker; or "singularity exec docker://broadinstitute/gatk bash -c "gatk" if your environment support singularity <br /> 
+* The "argument" in json does not support some operation for native variable !{var}; such as !{var%.txt}. It aslo does not support sed for escaping special character, such as sed 's/\.*//' . <br />
+* You can run docker directly from "argument", such as "docker run --rm -v $(pwd):$(pwd) broadinstitute/gatk gatk", which can be used to run multiple docker in one process as long as your environment support docker; or "singularity exec docker://broadinstitute/gatk bash -c "gatk" if your environment support singularity <br /> 
 
