@@ -23,7 +23,7 @@ EOF
 }
 
 show_version(){ # Display Version
-     echo "sak-nf:v0.0.3.2" 
+     echo "sak-nf:v0.0.4.0" 
 }
 ############################################################
 # Process the input options.                               #
@@ -154,6 +154,9 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     uppath=$(echo $(cat $inputjson | jq .process.${step}.upstream | jq 'join ("\n")' -r | sed 's/\./_/g' | sed 's/^/path__/') | sed 's/ /\\n/g' | sed 's/__/ /g' )
     upvar=$(echo $(cat $inputjson | jq .process.${step}.upstream | jq 'join ("\n")' -r | sed 's/\./_/g' | sed 's/^/!{/' | sed 's/$/}/') | sed 's/ /, /g')
     if [ $(echo $upitem | wc -c) -lt 5 ]; then uppath=""; upvar=""; fi
+    
+    instring=$(echo $(cat $inputjson | jq .process | jq .${step} | jq 'del(.upstream, .input, .output, .inputpairing, .upstreampairing, .sakcpu, .sakmem, .saktime, .dockerimg, .argument, .script)' |  jq 'paths | join ("_")' -r | sed "s/^/val__/") | sed 's/ /\\n/g' | sed 's/__/ /g')
+    
 
     #get output keys from json
     outitem=$(cat $inputjson | jq .process.${step}.output | jq 'paths | join ("_")' -r)
@@ -171,12 +174,14 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     cat $nfname/modules/sak.nf | sed "s/SAK/${step^^}/" | sed '/#bash advarg_temp.sh/r arg_temp.txt' \
     | sed "s/path input/$inpath/" | sed "s/\!{input}/${invar}/" \
     | sed "s/path upstream/$uppath/" | sed "s/\!{upstream}/${upvar}/" \
-    | sed '/output:/r output.tmp' | grep -v ", emit: out"> $nfname/modules/${step}.nf
+    | sed '/output:/r output.tmp' | grep -v ", emit: out" \
+    | sed "s/val outputDir/$instring/" > $nfname/modules/${step}.nf
     
     cat $nfname/modules/sak_docker.nf | sed "s/SAK/${step^^}/" | sed '/#bash advarg_temp.sh/r arg_temp.txt' \
     | sed "s/path input/$inpath/" | sed "s/\!{input}/${invar}/" \
     | sed "s/path upstream/$uppath/" | sed "s/\!{upstream}/${upvar}/" \
-    | sed '/output:/r output.tmp' | grep -v ", emit: out"> $nfname/modules/${step}_docker.nf
+    | sed '/output:/r output.tmp' | grep -v ", emit: out" \
+    | sed "s/val outputDir/$instring/" > $nfname/modules/${step}_docker.nf
     
     #cat $nfname/modules/sak_docker.nf | sed "s/SAK/${step^^}/" | sed '/#bash advarg_temp.sh/r arg_temp.txt' > $nfname/modules/${step}_docker.nf
     rm arg_temp.txt output.tmp
@@ -194,7 +199,7 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     | jq 'del(.upstream, .input, .output, .inputpairing, .upstreampairing)' \
     | grep ':' | sed "s/^\s*\"/params.${step}_/" | sed 's/\"\:/ =/' | sed 's/\,$//' \
     | sed 's/\$/\\$/g'  >> new_params.txt
-    
+
     #add input items to params insertion
     for key in 'input'; do
         cat $inputjson | jq .process.${step}.input \
@@ -256,10 +261,17 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
         fi 
     done
     itemfile=$(echo $(cat $inputjson | jq .process.${step}.input | jq 'paths | join ("_")' -r | sed "s/^/${step^^}_/") | sed 's/ /,/g')
+
+    #save string variables
+    
+    stringitems=$(echo $(cat $inputjson | jq .process | jq .${step} | jq 'del(.upstream, .input, .output, .inputpairing, .upstreampairing, .sakcpu, .sakmem, .saktime, .dockerimg, .argument, .script)' |  jq 'paths | join ("_")' -r | sed "s/^/params.${step}_/") | sed 's/ /, /g')
+    
+
     cat $nfname/template.nf | grep "* ## step cmd example" -A10 | tail -n9 | sed 's/\*//' \
     | sed "s/SAK/${step^^}/g" | sed "s/params./params.${step}_/g" | sed "s/Var_/${step^^}_/g" \
     | grep -v "${step^^}_UpStream.view" | grep -v "${step^^}_UpStream =" \
-    | sed "s/${step^^}_InFiles/$itemfile/g" | sed "s/${step^^}_UpStream,/$upitem/g" >> new_steps.txt
+    | sed "s/${step^^}_InFiles/$itemfile/g" | sed "s/${step^^}_UpStream,/$upitem/g" \
+    | sed "s/params.${step}_outputDir/$stringitems/g" >> new_steps.txt
     #| sed "s/.concat_upstream/$upitem/" | sed "s/${step^^}_InFiles/$itemfile/g" >> new_steps.txt
 
 done 
