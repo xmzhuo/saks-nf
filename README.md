@@ -7,6 +7,8 @@ User can configure the requirement of the process,such as cpu, mem and timeout p
 By default, the workflow will generate timeline.html and report.html once the workflow complete in a user designate location. <br />
 The user have the option to generate a log file as output, the md5sum with be appended to the end of log file. <br />
 Since v0.0.3.0, saks support parallel by optionally including a "inputpairing" or "upstreampairing" key with pattern of interest. <br />
+Since v0.0.4.0, saks support process specific string variable input, for example "name" will become a variable callable in the process by !{name}.
+User can assign any key under the process element except the reserved items, such as the "input","output","upstream","inputpairing","upstreampairing","dockerimg","argument","script","sak*".   <br />
 
 ## Installation
 
@@ -317,6 +319,6 @@ Multiple tempoary files and docker/singularity image in work directory.
 [Singularity](https://singularity.lbl.gov): Singularityware
 
 ### Notes
-* The "argument" in json does not support some operation for native variable !{var}; such as !{var%.txt}. It aslo does not support sed for escaping special character, such as sed 's/\.*//' . <br />
-* You can run docker directly from "argument", such as "docker run --rm -v $(pwd):$(pwd) broadinstitute/gatk gatk", which can be used to run multiple docker in one process as long as your environment support docker; or "singularity exec docker://broadinstitute/gatk bash -c "gatk" if your environment support singularity. However, when encounter error it may not thraw an error message to terminate the process <br /> 
+The "argument" in json does not support some operation for native variable !{var}; such as !{var%.txt}. It aslo does not support sed for escaping special character, such as sed 's/\.*//' . <br />
+You can run docker directly from "argument", such as "docker run --rm -v $(pwd):$(pwd) broadinstitute/gatk gatk", which can be used to run multiple docker in one process as long as your environment support docker <br />
 
