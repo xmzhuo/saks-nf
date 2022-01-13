@@ -23,7 +23,7 @@ EOF
 }
 
 show_version(){ # Display Version
-     echo "sak-nf:v0.0.4.0" 
+     echo "sak-nf:v0.0.4.1" 
 }
 ############################################################
 # Process the input options.                               #
@@ -151,7 +151,10 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     invar=$(echo $(cat $inputjson | jq .process.${step}.input | jq 'paths | join ("_")' -r | sed 's/^/!{/' | sed 's/$/}/') | sed 's/ /, /g')
     #get upstream keys from json, convert bed2interval.file to bedeinterval_file for vriable handeling
     upitem=$(cat $inputjson | jq .process.${step}.upstream | jq 'join (" ")' -r | sed 's/\./_/g')
-    uppath=$(echo $(cat $inputjson | jq .process.${step}.upstream | jq 'join ("\n")' -r | sed 's/\./_/g' | sed 's/^/path__/') | sed 's/ /\\n/g' | sed 's/__/ /g' )
+    #uppath=$(echo $(cat $inputjson | jq .process.${step}.upstream | jq 'join ("\n")' -r | sed 's/\./_/g' | sed 's/^/path__/') | sed 's/ /\\n/g' | sed 's/__/ /g' )
+    #upvar=$(echo $(cat $inputjson | jq .process.${step}.upstream | jq 'join ("\n")' -r | sed 's/\./_/g' | sed 's/^/!{/' | sed 's/$/}/') | sed 's/ /, /g')
+    #allow "up.abc", "up.path_abc", "up.val_abc" to be parse as path up_abc, path up_path_abc, val up_val_abc
+    uppath=$(echo $(cat $inputjson | jq .process.${step}.upstream | jq 'join ("\n")' -r | sed 's/\./_/g' | awk -F'_' '{if($2 == "path" || $2 == "val" ) print $2"__"$0; else print $0}'  | sed 's/^/path__/' | sed -E 's/(.*__)(.*__)/\2/') | sed 's/ /\\n/g' | sed 's/__/ /g' )
     upvar=$(echo $(cat $inputjson | jq .process.${step}.upstream | jq 'join ("\n")' -r | sed 's/\./_/g' | sed 's/^/!{/' | sed 's/$/}/') | sed 's/ /, /g')
     if [ $(echo $upitem | wc -c) -lt 5 ]; then uppath=""; upvar=""; fi
     
@@ -160,14 +163,15 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
 
     #get output keys from json
     outitem=$(cat $inputjson | jq .process.${step}.output | jq 'paths | join ("_")' -r)
+    #make output compatible for environment variable parsing from '"val_var" : "env"', to 'env  val_var, emit: val_var'
     cat $inputjson | jq .process.${step}.output | grep :  | sed "s/\s\"//g" | sed 's/\"//g' | sed 's/\,$//' \
-    | awk -F':' '{print "    path \""$2"\", emit:"$1}' > output.tmp
+    | awk -F':' '{if($2 == "env") print "    "$2" "$1", emit:"$1; else print "    path \""$2"\", emit:"$1}' > output.tmp
 
     #check argument and generate an insertion for argument shell script
     { echo $(cat $inputjson | jq .process | jq .${step} | jq .argument -r | sed 's/\$/\\$/g'); echo '2>&1 | tee -a sak-nf_\$(date '+%Y%m%d_%H%M%S').log'; } | tr "\n" " " | sed 's/;/\n/g' > arg_temp.txt
     echo "" >> arg_temp.txt
     #echo "outfileval=$(cat $inputjson | jq .process.${step}.output | jq 'join ("\n")' -r | grep -v .log)" >> arg_temp.txt
-    echo "outfileval=\"$(cat $inputjson | jq .process.${step}.output | jq 'join (" ")' -r | sed 's/\*.log//')\"" >> arg_temp.txt
+    echo "outfileval=\"$(cat $inputjson | jq .process.${step}.output | jq 'join (" ")' -r | sed 's/\*.log//' | sed 's/\senv//g' | sed 's/env\s//g')\"" >> arg_temp.txt
     echo 'logname=\$(ls *.log | grep sak-nf); echo "# md5sum #" >> \${logname};md5sum \${outfileval} >> \${logname}; logmd5=\$(md5sum \${logname} | sed "s/ /_/g"); mv \${logname} \${logmd5}' | sed 's/;/\n/g' >> arg_temp.txt
     
     # generate process for step, first fix argument, then input, then output

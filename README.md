@@ -168,7 +168,7 @@ For AWS, you can configure the queue machine type and policy on aws website. [Ex
 For slurm, you may need to define the cpu and memory in sbatch sh (sometimes slurm won't recognize the command in certian hpc), it also recommend to compose first then nextflow run the new composed nextflow folder with -profile slurm
 
 
-### * example_io-parallel;.json is a demo for composing and run two process workflow when paralelization is need. The first process uses gatk docker image to convert 6 bed files to 3 interval_list. The pairing strategy is 4.large.bed concatenate with 4.small.bed and generate a 4.bed then convert the 4.bed to 4.bed.intervallist. This step is paralized by create three process,4.d, 5.bed and 6.bed. The second process collecting all the result (3) and add chr to chromosome in interval_list (3). This example show the basic element of the json schema of saks-nf. The example nextflow script and result can be found in ./sak_example_output/parallel.
+### * example_io-parallel.json is a demo for composing and run two process workflow when paralelization is need. The first process uses gatk docker image to convert 6 bed files to 3 interval_list. The pairing strategy is 4.large.bed concatenate with 4.small.bed and generate a 4.bed then convert the 4.bed to 4.bed.intervallist. This step is paralized by create three process,4.d, 5.bed and 6.bed. The second process collecting all the result (3) and add chr to chromosome in interval_list (3). This example show the basic element of the json schema of saks-nf. The example nextflow script and result can be found in ./sak_example_output/parallel.
 ![example-parallel](/sak_example_output/example-parallel-flowchart.png)
 
 ```json
@@ -224,7 +224,7 @@ For slurm, you may need to define the cpu and memory in sbatch sh (sometimes slu
 ```
 
 
-### * example_io-scattergather;.json is a demo for composing and run scatter gather. The first process scatter a bed file by chromosome. The second process uses gatk docker image to convert each chromosome bed file to interval_list in prarallel. The third process collecting all the intervallist from all bed2interval processes and add chr to chromosome in interval_list. The example nextflow script and result can be found in ./sak_example_output/scattergather.
+### * example_io-scattergather.json is a demo for composing and run scatter gather. The first process scatter a bed file by chromosome. The second process uses gatk docker image to convert each chromosome bed file to interval_list in prarallel. The third process collecting all the intervallist from all bed2interval processes and add chr to chromosome in interval_list. The example nextflow script and result can be found in ./sak_example_output/scattergather.
 ![example-scattergather](/sak_example_output/example-scattergather-flowchart.png)
 
 ```json
@@ -296,6 +296,62 @@ For slurm, you may need to define the cpu and memory in sbatch sh (sometimes slu
 }
 }
 ```
+
+### * example_val.json is a demo for v0.0.4.1, the principle is the same as example_io.json. It take a string input "chr" : "4" to subset test.bed file to chr4 only, and parse the environmental variable "val_var" as ouput of first step and feed to the second step as "bed2interval.val_var".
+
+```json
+{
+"title": "example saks-nf pipeline pipeline parameters",
+"description": "Proof of concept of a saks pipeline implemented with Nextflow",
+"type": "workflow",
+"profile": "standard",
+"workdir": "./saks-work",
+"reportdir": "./saks-report",
+"process": {
+    "bed2interval" : {
+        "name" : "bed2interval",
+        "description" : "only convert chrosome 4 to intevallist",
+        "input" : {
+            "bed" : "./sak_data/test.bed",
+            "dict" : "./sak_data/*.dict"
+        },
+        "output" : {
+            "file" : "*.interval_list",
+            "log" : "*.log",
+            "val_var" : "env"
+        },
+        "chr" : "4",
+        "upstream" : [""],
+        "script" : "./sak_data/test.sh",
+        "dockerimg" : "broadinstitute/gatk:4.2.2.0",
+        "argument" : "cat !{bed} | awk -v var=!{chr} '{if($1 == var) print}' > temp.bed; val_var=!{chr}; bash !{script} temp.bed human_g1k_v37_decoy.dict",
+        "outputDir" : "./results/bed2interval",
+        "sakcpu" : "2",
+        "sakmem" : "4.GB",
+        "saktime" : "1.hour"
+    },
+    "addchr" : {
+        "name" : "addchr",
+        "input" : {
+            "file" : ""
+        },
+        "output" : {
+            "file" : "*.interval_list",
+            "log" : "*.log"
+        },
+        "upstream" : ["bed2interval.file","bed2interval.val_var"],
+        "script" : "",
+        "dockerimg" : "",
+        "argument" : "file=$(ls *.interval_list); cat $file | sed 's/^/chr/' > ${file%.*}.chr.interval_list; echo only generate interval_list for chr !{bed2interval_val_var[0]}",
+        "outputDir" : "./results/addchr",
+        "sakcpu" : "2",
+        "sakmem" : "4.GB",
+        "saktime" : "1.hour"
+    }
+}
+}
+```
+
 
 ### result of 'bash saks-nf/run.sh saks-nf/example.json' is exhibited in ./sak_example_output, seperate into standard, parallel and scattergather accordinly.
 
