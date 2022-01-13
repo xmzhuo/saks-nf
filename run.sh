@@ -23,7 +23,7 @@ EOF
 }
 
 show_version(){ # Display Version
-     echo "sak-nf:v0.0.3.2" 
+     echo "sak-nf:v0.0.4.1" 
 }
 ############################################################
 # Process the input options.                               #
@@ -151,32 +151,41 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     invar=$(echo $(cat $inputjson | jq .process.${step}.input | jq 'paths | join ("_")' -r | sed 's/^/!{/' | sed 's/$/}/') | sed 's/ /, /g')
     #get upstream keys from json, convert bed2interval.file to bedeinterval_file for vriable handeling
     upitem=$(cat $inputjson | jq .process.${step}.upstream | jq 'join (" ")' -r | sed 's/\./_/g')
-    uppath=$(echo $(cat $inputjson | jq .process.${step}.upstream | jq 'join ("\n")' -r | sed 's/\./_/g' | sed 's/^/path__/') | sed 's/ /\\n/g' | sed 's/__/ /g' )
+    #uppath=$(echo $(cat $inputjson | jq .process.${step}.upstream | jq 'join ("\n")' -r | sed 's/\./_/g' | sed 's/^/path__/') | sed 's/ /\\n/g' | sed 's/__/ /g' )
+    #upvar=$(echo $(cat $inputjson | jq .process.${step}.upstream | jq 'join ("\n")' -r | sed 's/\./_/g' | sed 's/^/!{/' | sed 's/$/}/') | sed 's/ /, /g')
+    #allow "up.abc", "up.path_abc", "up.val_abc" to be parse as path up_abc, path up_path_abc, val up_val_abc
+    uppath=$(echo $(cat $inputjson | jq .process.${step}.upstream | jq 'join ("\n")' -r | sed 's/\./_/g' | awk -F'_' '{if($2 == "path" || $2 == "val" ) print $2"__"$0; else print $0}'  | sed 's/^/path__/' | sed -E 's/(.*__)(.*__)/\2/') | sed 's/ /\\n/g' | sed 's/__/ /g' )
     upvar=$(echo $(cat $inputjson | jq .process.${step}.upstream | jq 'join ("\n")' -r | sed 's/\./_/g' | sed 's/^/!{/' | sed 's/$/}/') | sed 's/ /, /g')
     if [ $(echo $upitem | wc -c) -lt 5 ]; then uppath=""; upvar=""; fi
+    
+    instring=$(echo $(cat $inputjson | jq .process | jq .${step} | jq 'del(.upstream, .input, .output, .inputpairing, .upstreampairing, .sakcpu, .sakmem, .saktime, .dockerimg, .argument, .script)' |  jq 'paths | join ("_")' -r | sed "s/^/val__/") | sed 's/ /\\n/g' | sed 's/__/ /g')
+    
 
     #get output keys from json
     outitem=$(cat $inputjson | jq .process.${step}.output | jq 'paths | join ("_")' -r)
+    #make output compatible for environment variable parsing from '"val_var" : "env"', to 'env  val_var, emit: val_var'
     cat $inputjson | jq .process.${step}.output | grep :  | sed "s/\s\"//g" | sed 's/\"//g' | sed 's/\,$//' \
-    | awk -F':' '{print "    path \""$2"\", emit:"$1}' > output.tmp
+    | awk -F':' '{if($2 == "env") print "    "$2" "$1", emit:"$1; else print "    path \""$2"\", emit:"$1}' > output.tmp
 
     #check argument and generate an insertion for argument shell script
     { echo $(cat $inputjson | jq .process | jq .${step} | jq .argument -r | sed 's/\$/\\$/g'); echo '2>&1 | tee -a sak-nf_\$(date '+%Y%m%d_%H%M%S').log'; } | tr "\n" " " | sed 's/;/\n/g' > arg_temp.txt
     echo "" >> arg_temp.txt
     #echo "outfileval=$(cat $inputjson | jq .process.${step}.output | jq 'join ("\n")' -r | grep -v .log)" >> arg_temp.txt
-    echo "outfileval=\"$(cat $inputjson | jq .process.${step}.output | jq 'join (" ")' -r | sed 's/\*.log//')\"" >> arg_temp.txt
+    echo "outfileval=\"$(cat $inputjson | jq .process.${step}.output | jq 'join (" ")' -r | sed 's/\*.log//' | sed 's/\senv//g' | sed 's/env\s//g')\"" >> arg_temp.txt
     echo 'logname=\$(ls *.log | grep sak-nf); echo "# md5sum #" >> \${logname};md5sum \${outfileval} >> \${logname}; logmd5=\$(md5sum \${logname} | sed "s/ /_/g"); mv \${logname} \${logmd5}' | sed 's/;/\n/g' >> arg_temp.txt
     
     # generate process for step, first fix argument, then input, then output
     cat $nfname/modules/sak.nf | sed "s/SAK/${step^^}/" | sed '/#bash advarg_temp.sh/r arg_temp.txt' \
     | sed "s/path input/$inpath/" | sed "s/\!{input}/${invar}/" \
     | sed "s/path upstream/$uppath/" | sed "s/\!{upstream}/${upvar}/" \
-    | sed '/output:/r output.tmp' | grep -v ", emit: out"> $nfname/modules/${step}.nf
+    | sed '/output:/r output.tmp' | grep -v ", emit: out" \
+    | sed "s/val outputDir/$instring/" > $nfname/modules/${step}.nf
     
     cat $nfname/modules/sak_docker.nf | sed "s/SAK/${step^^}/" | sed '/#bash advarg_temp.sh/r arg_temp.txt' \
     | sed "s/path input/$inpath/" | sed "s/\!{input}/${invar}/" \
     | sed "s/path upstream/$uppath/" | sed "s/\!{upstream}/${upvar}/" \
-    | sed '/output:/r output.tmp' | grep -v ", emit: out"> $nfname/modules/${step}_docker.nf
+    | sed '/output:/r output.tmp' | grep -v ", emit: out" \
+    | sed "s/val outputDir/$instring/" > $nfname/modules/${step}_docker.nf
     
     #cat $nfname/modules/sak_docker.nf | sed "s/SAK/${step^^}/" | sed '/#bash advarg_temp.sh/r arg_temp.txt' > $nfname/modules/${step}_docker.nf
     rm arg_temp.txt output.tmp
@@ -194,7 +203,7 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     | jq 'del(.upstream, .input, .output, .inputpairing, .upstreampairing)' \
     | grep ':' | sed "s/^\s*\"/params.${step}_/" | sed 's/\"\:/ =/' | sed 's/\,$//' \
     | sed 's/\$/\\$/g'  >> new_params.txt
-    
+
     #add input items to params insertion
     for key in 'input'; do
         cat $inputjson | jq .process.${step}.input \
@@ -256,10 +265,17 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
         fi 
     done
     itemfile=$(echo $(cat $inputjson | jq .process.${step}.input | jq 'paths | join ("_")' -r | sed "s/^/${step^^}_/") | sed 's/ /,/g')
+
+    #save string variables
+    
+    stringitems=$(echo $(cat $inputjson | jq .process | jq .${step} | jq 'del(.upstream, .input, .output, .inputpairing, .upstreampairing, .sakcpu, .sakmem, .saktime, .dockerimg, .argument, .script)' |  jq 'paths | join ("_")' -r | sed "s/^/params.${step}_/") | sed 's/ /, /g')
+    
+
     cat $nfname/template.nf | grep "* ## step cmd example" -A10 | tail -n9 | sed 's/\*//' \
     | sed "s/SAK/${step^^}/g" | sed "s/params./params.${step}_/g" | sed "s/Var_/${step^^}_/g" \
     | grep -v "${step^^}_UpStream.view" | grep -v "${step^^}_UpStream =" \
-    | sed "s/${step^^}_InFiles/$itemfile/g" | sed "s/${step^^}_UpStream,/$upitem/g" >> new_steps.txt
+    | sed "s/${step^^}_InFiles/$itemfile/g" | sed "s/${step^^}_UpStream,/$upitem/g" \
+    | sed "s/params.${step}_outputDir/$stringitems/g" >> new_steps.txt
     #| sed "s/.concat_upstream/$upitem/" | sed "s/${step^^}_InFiles/$itemfile/g" >> new_steps.txt
 
 done 

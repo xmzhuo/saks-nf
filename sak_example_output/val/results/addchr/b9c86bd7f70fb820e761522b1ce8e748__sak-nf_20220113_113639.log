@@ -1,0 +1,4 @@
+only generate interval_list for chr 4
+# md5sum #
+733a351bad4833d45ae80c1d59225842  temp.bed.chr.interval_list
+007ccdf41d8233e62e0c42251c167ef3  temp.bed.interval_list
