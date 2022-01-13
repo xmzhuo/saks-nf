@@ -318,9 +318,9 @@ For slurm, you may need to define the cpu and memory in sbatch sh (sometimes slu
         "output" : {
             "file" : "*.interval_list",
             "log" : "*.log",
-            "val_var" : "env"
+            "val_var" : "env"                                                                                   #output environment variable to next step, set value as 'env' and key with 'val_'
         },
-        "chr" : "4",
+        "chr" : "4",                                                                                            #add a string input to process
         "upstream" : [""],
         "script" : "./sak_data/test.sh",
         "dockerimg" : "broadinstitute/gatk:4.2.2.0",
@@ -339,10 +339,10 @@ For slurm, you may need to define the cpu and memory in sbatch sh (sometimes slu
             "file" : "*.interval_list",
             "log" : "*.log"
         },
-        "upstream" : ["bed2interval.file","bed2interval.val_var"],
+        "upstream" : ["bed2interval.file","bed2interval.val_var"],                                            #accept upstream input both in file path or value with prefix 'path_' or 'val_', recognize as path if without prefix  
         "script" : "",
         "dockerimg" : "",
-        "argument" : "file=$(ls *.interval_list); cat $file | sed 's/^/chr/' > ${file%.*}.chr.interval_list; echo only generate interval_list for chr !{bed2interval_val_var[0]}",
+        "argument" : "file=$(ls *.interval_list); cat $file | sed 's/^/chr/' > ${file%.*}.chr.interval_list; echo only generate interval_list for chr !{bed2interval_val_var[0]}",     
         "outputDir" : "./results/addchr",
         "sakcpu" : "2",
         "sakmem" : "4.GB",
