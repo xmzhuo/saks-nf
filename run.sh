@@ -23,7 +23,7 @@ EOF
 }
 
 show_version(){ # Display Version
-     echo "sak-nf:v0.0.4.1" 
+     echo "sak-nf:v0.0.4.2" 
 }
 ############################################################
 # Process the input options.                               #
@@ -160,6 +160,13 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     
     instring=$(echo $(cat $inputjson | jq .process | jq .${step} | jq 'del(.upstream, .input, .output, .inputpairing, .upstreampairing, .sakcpu, .sakmem, .saktime, .dockerimg, .argument, .script)' |  jq 'paths | join ("_")' -r | sed "s/^/val__/") | sed 's/ /\\n/g' | sed 's/__/ /g')
     
+    #check if queue is assigned, if so insert a line of queue after echo true, fix the problem of cloud instance
+    qchk=$(cat $inputjson | jq .process.${step}.queue)
+    if [ $qchk != null ]; then 
+        echo "    queue \"\$queue\"" > queue.tmp
+        sed -i '/echo true/r queue.tmp' $nfname/modules/sak.nf
+        sed -i '/echo true/r queue.tmp' $nfname/modules/sak_docker.nf
+    fi 
 
     #get output keys from json
     outitem=$(cat $inputjson | jq .process.${step}.output | jq 'paths | join ("_")' -r)
