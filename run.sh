@@ -298,9 +298,9 @@ sed -i '/\/\/ import modules/r new_module.txt' $nfname/main.nf
 # include process after "// compose workflow"
 sed -i '/\/\/ compose workflow/r new_steps.txt' $nfname/main.nf
 
-rm new_params.txt new_loginfo.txt new_module.txt new_steps.txt upitem.txt
+rm new_params.txt new_loginfo.txt new_module.txt new_steps.txt upitem.txt *.tmp
 
-rm $nfname/template.nf $nfname/modules/sak_docker.nf $nfname/modules/sak.nf $nfname/run.sh
+rm $nfname/template.nf $nfname/modules/sak_docker.nf $nfname/modules/sak.nf $nfname/run*.sh
 rm $nfname/sak_data -r
 rm $nfname/sak_example_output -r
 #get directory for work and report
