@@ -383,6 +383,9 @@ You can run docker directly from "argument", such as "docker run --rm -v $(pwd):
 <br />
 <br />
 <br />
+---
+
+## License
 
 Shield: [![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
 
