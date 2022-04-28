@@ -384,9 +384,7 @@ You can run docker directly from "argument", such as "docker run --rm -v $(pwd):
 <br />
 <br />
 
-```markdown
-
----
+------
 
 ## License
 
