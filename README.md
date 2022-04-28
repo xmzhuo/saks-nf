@@ -389,7 +389,7 @@ You can run docker directly from "argument", such as "docker run --rm -v $(pwd):
 
 Shield: [![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
 
-This work is licensed under a
+This work by Xinming Zhuo, Nick Renzette and Gregory Omerza of The Jackson Laboratory is licensed under a
 [Creative Commons Attribution-NonCommercial 4.0 International License][cc-by-nc].
 
 [![CC BY-NC 4.0][cc-by-nc-image]][cc-by-nc]
