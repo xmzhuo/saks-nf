@@ -378,3 +378,22 @@ Multiple tempoary files and docker/singularity image in work directory.
 The "argument" in json does not support some operation for native variable !{var}; such as !{var%.txt}. It aslo does not support sed for escaping special character, such as sed 's/\.*//' . <br />
 You can run docker directly from "argument", such as "docker run --rm -v $(pwd):$(pwd) broadinstitute/gatk gatk", which can be used to run multiple docker in one process as long as your environment support docker <br />
 
+
+
+<br />
+<br />
+<br />
+---
+
+## License
+
+Shield: [![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
+
+This work is licensed under a
+[Creative Commons Attribution-NonCommercial 4.0 International License][cc-by-nc].
+
+[![CC BY-NC 4.0][cc-by-nc-image]][cc-by-nc]
+
+[cc-by-nc]: http://creativecommons.org/licenses/by-nc/4.0/
+[cc-by-nc-image]: https://licensebuttons.net/l/by-nc/4.0/88x31.png
+[cc-by-nc-shield]: https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg
