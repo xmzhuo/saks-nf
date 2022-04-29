@@ -23,7 +23,7 @@ EOF
 }
 
 show_version(){ # Display Version
-     echo "sak-nf:v0.0.4.2" 
+     echo "sak-nf:v0.0.4.3" 
 }
 ############################################################
 # Process the input options.                               #
@@ -159,15 +159,7 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     if [ $(echo $upitem | wc -c) -lt 5 ]; then uppath=""; upvar=""; fi
     
     instring=$(echo $(cat $inputjson | jq .process | jq .${step} | jq 'del(.upstream, .input, .output, .inputpairing, .upstreampairing, .sakcpu, .sakmem, .saktime, .dockerimg, .argument, .script)' |  jq 'paths | join ("_")' -r | sed "s/^/val__/") | sed 's/ /\\n/g' | sed 's/__/ /g')
-    
-    #check if queue is assigned, if so insert a line of queue after echo true, fix the problem of cloud instance
-    qchk=$(cat $inputjson | jq .process.${step}.queue)
-    if [ $qchk != null ]; then 
-        echo "    queue \"\$queue\"" > queue.tmp
-        sed -i '/echo true/r queue.tmp' $nfname/modules/sak.nf
-        sed -i '/echo true/r queue.tmp' $nfname/modules/sak_docker.nf
-    fi 
-
+        
     #get output keys from json
     outitem=$(cat $inputjson | jq .process.${step}.output | jq 'paths | join ("_")' -r)
     #make output compatible for environment variable parsing from '"val_var" : "env"', to 'env  val_var, emit: val_var'
@@ -196,13 +188,21 @@ for step in $(cat $inputjson | jq .process | jq .[].name -r); do
     
     #cat $nfname/modules/sak_docker.nf | sed "s/SAK/${step^^}/" | sed '/#bash advarg_temp.sh/r arg_temp.txt' > $nfname/modules/${step}_docker.nf
     rm arg_temp.txt output.tmp
- 
-    #allow queue setting for process with cloud
-    if [ $(echo 'azure|aws|gcp' | grep $profile | wc -l) -gt 0 ]; then 
-        queue=$(cat $inputjson | jq .process | jq .${step} | jq .queue -r)
-        sed -i "/echo true/a\    queue \"${queue}\"" $nfname/modules/${step}.nf
-        sed -i "/echo true/a\    queue \"${queue}\"" $nfname/modules/${step}_docker.nf
-    fi
+    
+    #check if queue is assigned, if so insert a line of queue after echo true, fix the problem of cloud instance
+    qchk=$(cat $inputjson | jq .process.${step}.queue)
+    if [ $qchk != null ]; then 
+        echo "    queue \"\$queue\"" > queue.tmp
+        sed -i '/echo true/r queue.tmp' $nfname/modules/${step}.nf
+        sed -i '/echo true/r queue.tmp' $nfname/modules/${step}_docker.nf
+    fi 
+
+    ##allow queue setting for process with cloud
+    #if [ $(echo 'azure|aws|gcp' | grep $profile | wc -l) -gt 0 ]; then 
+    #    queue=$(cat $inputjson | jq .process | jq .${step} | jq .queue -r)
+    #    sed -i "/echo true/a\    queue \"${queue}\"" $nfname/modules/${step}.nf
+    #    sed -i "/echo true/a\    queue \"${queue}\"" $nfname/modules/${step}_docker.nf
+    #fi
     
     ###change the main.nf
     #compose params insertion, first exclude upstream, input and output, then clean up the format, finally handle the $ in argument
