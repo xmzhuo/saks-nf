@@ -9,6 +9,7 @@ The user have the option to generate a log file as output, the md5sum with be ap
 Since v0.0.3.0, saks support parallel by optionally including a "inputpairing" or "upstreampairing" key with pattern of interest. <br />
 Since v0.0.4.0, saks support process specific string variable input, for example "name" will become a variable callable in the process by !{name}.
 User can assign any key under the process element except the reserved items, such as the "input","output","upstream","inputpairing","upstreampairing","dockerimg","argument","script","sak*".   <br />
+Since v0.0.4.3, allow tracking of system performance in log and .command.log, such as cpu, mem and disk information <br /> 
 
 ## Installation
 
