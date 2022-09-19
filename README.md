@@ -1,6 +1,9 @@
 # An api for automatic building nextflow pipeline with json input
 API for building pipeline from json input without writing nextflow code from scratch. Swiss Army Knife Solution for nextflow (saks-nf). <br />
 Once run completely, saks-nf will generate a completed and ready-to-go nextflow workflow with default of designate name. User can choose to run it immediatley or run it later with 'nextflow run' after manual examiniation. <br />
+
+Preprint:https://www.biorxiv.org/content/10.1101/2022.09.19.508305v1 <br />
+
 User can build single process or multiple processes workflow with a json file. <br />
 Saks is compatible with docker or local executer and run on various platform, such as local pc, hpc(slurm) or cloud with default config files in nextflow format (see example in ./config).  <br />
 User can configure the requirement of the process,such as cpu, mem and timeout policy in the json file. <br />
